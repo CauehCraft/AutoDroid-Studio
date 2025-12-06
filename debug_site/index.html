@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Touch Debugger</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #222;
+            color: #fff;
+            font-family: monospace;
+            user-select: none;
+            /* Prevent text selection */
+            -webkit-user-select: none;
+            touch-action: none;
+            /* Prevent default touch actions like scrolling */
+        }
+
+        #background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            opacity: 0.3;
+            font-size: 2rem;
+            overflow: hidden;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            pointer-events: none;
+            /* Let touches pass through */
+        }
+
+        .btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background: #444;
+            color: #fff;
+            border: 1px solid #666;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+        }
+
+        #history {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="background"></div>
+
+    <div id="info">
+        <div>Status: <span id="status">Idle</span></div>
+        <div>Pos: <span id="pos">0, 0</span></div>
+        <div>Duration: <span id="duration">0</span> ms</div>
+        <div id="history"></div>
+    </div>
+
+    <button class="btn" onclick="toggleFullScreen()">Full Screen</button>
+
+    <div id="marker" class="marker"></div>
+
+    <script>
+        // Emojis for background
+        const emojis = ['😀', '😎', '🤖', '👾', '🎃', '🐶', '🐱', '🚀', '⭐', '🔥', '💎', '🍕', '🍔', '🎈', '🎉'];
+        const bg = document.getElementById('background');
+
+        // Fill background with random emojis
+        for (let i = 0; i < 200; i++) {
+            const span = document.createElement('span');
+            span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            span.style.padding = '10px';
+            bg.appendChild(span);
+        }
+
+        // Touch handling
+        const statusEl = document.getElementById('status');
+        const posEl = document.getElementById('pos');
+        const durationEl = document.getElementById('duration');
+        const historyEl = document.getElementById('history');
+
+        // Map to track active touches: identifier -> {startTime, marker}
+        const activeTouches = new Map();
+
+        function createMarker(id, x, y) {
+            const marker = document.createElement('div');
+            marker.className = 'marker';
+            marker.style.left = x + 'px';
+            marker.style.top = y + 'px';
+            marker.style.display = 'block';
+            marker.style.backgroundColor = `hsl(${(id * 50) % 360}, 100%, 50%)`; // Distinct colors
+            document.body.appendChild(marker);
+            return marker;
+        }
+
+        function updateInfo(status, x, y, time) {
+            statusEl.textContent = status;
+            posEl.textContent = `${Math.round(x)}, ${Math.round(y)}`;
+            if (time !== undefined) {
+                durationEl.textContent = time;
+            }
+        }
+
+        function addHistory(action, duration, id) {
+            const div = document.createElement('div');
+            div.textContent = `T${id} ${action}: ${duration}ms`;
+            historyEl.prepend(div);
+            if (historyEl.children.length > 5) {
+                historyEl.removeChild(historyEl.lastChild);
+            }
+        }
+
+        window.addEventListener('touchstart', (e) => {
+            // Allow button clicks
+            if (e.target.tagName === 'BUTTON') return;
+
+            e.preventDefault();
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const marker = createMarker(touch.identifier, touch.clientX, touch.clientY);
+
+                activeTouches.set(touch.identifier, {
+                    startTime: performance.now(),
+                    marker: marker
+                });
+
+                updateInfo(`Down (${activeTouches.size})`, touch.clientX, touch.clientY, 0);
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            e.preventDefault();
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const data = activeTouches.get(touch.identifier);
+                if (data) {
+                    data.marker.style.left = touch.clientX + 'px';
+                    data.marker.style.top = touch.clientY + 'px';
+
+                    const duration = Math.round(performance.now() - data.startTime);
+                    updateInfo(`Move (${activeTouches.size})`, touch.clientX, touch.clientY, duration);
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            e.preventDefault();
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const data = activeTouches.get(touch.identifier);
+                if (data) {
+                    const duration = Math.round(performance.now() - data.startTime);
+
+                    // Remove marker
+                    if (data.marker.parentNode) {
+                        data.marker.parentNode.removeChild(data.marker);
+                    }
+
+                    activeTouches.delete(touch.identifier);
+
+                    updateInfo(`Up (${activeTouches.size})`, touch.clientX, touch.clientY, duration);
+                    addHistory('Action', duration, touch.identifier);
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchcancel', (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const data = activeTouches.get(touch.identifier);
+                if (data) {
+                    if (data.marker.parentNode) {
+                        data.marker.parentNode.removeChild(data.marker);
+                    }
+                    activeTouches.delete(touch.identifier);
+                }
+            }
+        });
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

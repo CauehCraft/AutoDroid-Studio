@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+scrcpy-win64/
+.idea/
+.vscode/
+tmp/
+.gemini/
+assets/
+macros/
+.pytest_cache
