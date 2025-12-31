@@ -59,7 +59,7 @@ class DeviceCard(CardWidget):
         # Macro Info
         self.macroInfoLayout = QHBoxLayout()
         self.macroLabel = BodyLabel("No Macro Running", self)
-        self.macroLabel.setMaximumWidth(200)
+        self.macroLabel.setMaximumWidth(120)
         self.macroInfoLayout.addWidget(self.macroLabel)
         
         # Macro Controls
@@ -120,9 +120,12 @@ class DeviceCard(CardWidget):
     def update_status(self, status: str, macro_name: str = None):
         self.statusBadge.setText(status)
         if macro_name:
-            self.macroLabel.setText(f"{macro_name}")
+            if status == "Running":
+                self.macroLabel.setText("Running:")
+            else:
+                self.macroLabel.setText(f"{macro_name}")
         else:
-            self.macroLabel.setText("No Macro Running")
+            self.macroLabel.setText("Select a macro:")
             
     def update_variables(self, variables: dict):
         self.varTable.setRowCount(len(variables))

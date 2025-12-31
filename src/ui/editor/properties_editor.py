@@ -594,19 +594,34 @@ class PropertiesEditor(QWidget):
         
         asset_combo.addItems(region_names)
         
+        # Find current match
         current_selection = None
         target_point = getattr(action, attr_name) if not point_type else (action.start_point if point_type == "start" else action.end_point)
 
         if isinstance(target_point, (Region, PolygonRegion, MultiRegion)):
-             # Logic to find current region name... simplified for brevity, relying on user selection primarily
-             pass
+             for name in region_names:
+                 data = regions[name]
+                 r_data = data["region"] if isinstance(data, dict) else data
+                 
+                 if r_data == target_point:
+                     current_selection = name
+                     break
+                 if isinstance(target_point, MultiRegion) and isinstance(r_data, MultiRegion):
+                      if len(target_point.regions) == len(r_data.regions):
+                           current_selection = name
+                           break
         
-        if region_names:
+        asset_combo.blockSignals(True)
+        if current_selection:
+             asset_combo.setCurrentText(current_selection)
+        else:
              asset_combo.setCurrentText(region_names[0]) # Default to first
-             if point_type:
-                  self.set_swipe_target_from_asset(action, region_names[0], point_type)
-             else:
-                  self.set_action_target_from_asset(action, region_names[0])
+             if target_point is None:
+                  if point_type:
+                       self.set_swipe_target_from_asset(action, region_names[0], point_type)
+                  else:
+                       self.set_action_target_from_asset(action, region_names[0])
+        asset_combo.blockSignals(False)
         
         if point_type:
              asset_combo.currentTextChanged.connect(lambda name: self.set_swipe_target_from_asset(action, name, point_type))

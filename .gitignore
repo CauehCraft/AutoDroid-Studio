@@ -9,3 +9,4 @@ tmp/
 assets/
 macros/
 .pytest_cache
+tests/imgsOcr/

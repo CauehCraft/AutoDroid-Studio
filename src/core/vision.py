@@ -3,6 +3,8 @@ import numpy as np
 import pytesseract
 from typing import Optional, Tuple, List
 from .models import Region, Point
+import os
+import shutil
 
 class VisionEngine:
     def __init__(self):
@@ -165,11 +167,12 @@ class VisionEngine:
             _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             return thresh
 
-    def read_text(self, screen: np.ndarray, region: Optional[Region] = None, preprocess: str = "game", lang: str = "eng", whitelist: str = "") -> str:
+    def read_text(self, screen: np.ndarray, region: Optional[Region] = None, preprocess: str = "game", lang: str = "eng", whitelist: str = "", save_debug_image: bool = False) -> str:
         """
         Reads text from the screen or a specific region using OCR.
         preprocess: 'default', 'game', 'number', 'white_text', 'adaptive', 'clean'
         whitelist: Optional string of allowed characters (e.g. "0123456789")
+        save_debug_image: If True, saves preprocessed image to tests/imgsOcr/ocr_debug.png
         """
         if screen is None:
             return ""
@@ -183,9 +186,14 @@ class VisionEngine:
         processed_img = self.preprocess_image(img_to_process, method=preprocess)
         
         # Save debug image
-        try:
-            cv2.imwrite("ocr_debug.png", processed_img)
-        except: pass
+        if save_debug_image:
+            try:
+                debug_dir = "tests/imgsOcr"
+                if not os.path.exists(debug_dir):
+                    os.makedirs(debug_dir)
+                cv2.imwrite(os.path.join(debug_dir, "ocr_debug.png"), processed_img)
+            except Exception as e:
+                print(f"Failed to save debug image: {e}")
 
         try:
             # Configure tesseract

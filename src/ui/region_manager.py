@@ -608,7 +608,7 @@ class RegionManager(QWidget):
                 preprocessed = self.vision.preprocess_image(cropped, method=mode)
                 
                 # 2. Run OCR
-                text = self.vision.read_text(screen, target_region, preprocess=mode)
+                text = self.vision.read_text(screen, target_region, preprocess=mode, save_debug_image=True)
                 
                 # 3. Show Result with Image Preview
                 w = OCRResultDialog(text, preprocessed, self)

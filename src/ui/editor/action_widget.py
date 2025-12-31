@@ -118,9 +118,6 @@ class ActionItemWidget(QWidget):
         if self.is_editing:
             # Use selection style (blue-ish background)
             style += "background-color: #009faa; border-radius: 5px; "
-            # Remove border if it was causing the "too small" look, or keep it if it helps
-            # User said "outline ... is very small/inside", so maybe just background is enough like selection
-            # Let's remove the border for editing if we use background
             if "border: 2px solid #00A6FB" in style:
                 style = style.replace("border: 2px solid #00A6FB", "border: none")
         elif self.is_loop_start or self.is_loop_end:
