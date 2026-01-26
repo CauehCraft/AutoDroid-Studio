@@ -251,6 +251,17 @@ class ClickImageAction(Action):
         return data
 
 @dataclass
+class ScreenshotAction(Action):
+    filename_pattern: str = "screenshot_{timestamp}.png"
+    save_path: str = "screenshots"
+    
+    def to_dict(self):
+        data = super().to_dict()
+        data["filename_pattern"] = self.filename_pattern
+        data["save_path"] = self.save_path
+        return data
+
+@dataclass
 class OCRAction(Action):
     region_name: str = ""
     variable_name: str = ""

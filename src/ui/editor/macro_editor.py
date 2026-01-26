@@ -24,7 +24,7 @@ from ...core.automation_engine import MacroRunner
 from ...core.models import (Action, ClickAction, ClickImageAction, ConditionAction,
                             LoopAction, LoopEndAction, LoopStartAction, Macro,
                             MultiAction, MultiRegion, OCRAction, Point, PolygonRegion,
-                            Region, Size, SwipeAction, VarAction, WaitAction)
+                            Region, Size, SwipeAction, VarAction, WaitAction, ScreenshotAction)
 from ...utils.logger import app_logger
 from ..styles import COMMON_STYLE
 from .action_widget import ActionItemWidget
@@ -142,6 +142,9 @@ class MacroEditor(QWidget):
         self.btnLayout.addWidget(self.addMultiBtn)
         self.btnLayout.addWidget(self.addLoopBtn)
         
+        self.addScreenshotBtn = PushButton('Add Screenshot', self.actionPanel)
+        self.btnLayout.addWidget(self.addScreenshotBtn)
+        
         self.actionLayout.addLayout(self.btnLayout)
 
     def _setup_properties_panel(self):
@@ -158,6 +161,7 @@ class MacroEditor(QWidget):
         self.addSwipeBtn.clicked.connect(self.add_swipe_action)
         self.addMultiBtn.clicked.connect(self.add_multi_action)
         self.addLoopBtn.clicked.connect(self.add_loop_action)
+        self.addScreenshotBtn.clicked.connect(self.add_screenshot_action)
         
         self.runBtn.clicked.connect(self.run_macro)
         self.pauseBtn.clicked.connect(self.pause_macro)
@@ -403,6 +407,11 @@ class MacroEditor(QWidget):
         
         self.current_macro.actions.append(start_action)
         self.current_macro.actions.append(end_action)
+        self.refresh_list()
+
+    def add_screenshot_action(self):
+        action = ScreenshotAction(id=str(time.time()), type="screenshot", filename_pattern="screenshot_{timestamp}", save_path="screenshots", advanced_logic=[])
+        self.current_macro.actions.append(action)
         self.refresh_list()
 
     def refresh_list(self):

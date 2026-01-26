@@ -14,7 +14,7 @@ from ...core.action_factory import ActionFactory
 from ...core.models import (Action, ClickAction, ClickImageAction, ConditionAction,
                             LoopAction, LoopEndAction, LoopStartAction, MultiAction,
                             MultiRegion, OCRAction, Point, PolygonRegion, Region,
-                            SwipeAction, VarAction, WaitAction)
+                            SwipeAction, VarAction, WaitAction, ScreenshotAction)
 from ...utils.logger import app_logger
 from .action_widget import ActionItemWidget
 from .logic_editor import LogicEditorDialog
@@ -114,6 +114,8 @@ class PropertiesEditor(QWidget):
             self._show_loop_end_properties(action)
         elif isinstance(action, MultiAction):
             self._show_multi_action_properties(action)
+        elif isinstance(action, ScreenshotAction):
+            self._show_screenshot_properties(action)
             
         self._add_debug_section()
 
@@ -198,6 +200,18 @@ class PropertiesEditor(QWidget):
         
         self._add_duration_variance_fields(action, 'duration_ms', 'random_duration_variance',
                                             "Press Duration (ms):", "Variance (ms):")
+
+    def _show_screenshot_properties(self, action):
+        filename_edit = LineEdit()
+        filename_edit.setText(action.filename_pattern)
+        filename_edit.textChanged.connect(lambda text: setattr(action, 'filename_pattern', text))
+        self.formLayout.addRow("Filename Pattern:", filename_edit)
+        self.formLayout.addRow(BodyLabel("Use {timestamp} for auto-naming", self))
+        
+        path_edit = LineEdit()
+        path_edit.setText(action.save_path)
+        path_edit.textChanged.connect(lambda text: setattr(action, 'save_path', text))
+        self.formLayout.addRow("Save Path:", path_edit)
 
     def _show_ocr_properties(self, action):
         region_combo = ComboBox()

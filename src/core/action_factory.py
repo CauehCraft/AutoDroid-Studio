@@ -3,7 +3,8 @@ import time
 from .models import (
     Action, ClickAction, ClickImageAction, ConditionAction, LogicRule,
     LoopAction, LoopEndAction, LoopStartAction, MultiAction, MultiRegion,
-    OCRAction, Point, PolygonRegion, Region, SwipeAction, VarAction, WaitAction
+    OCRAction, Point, PolygonRegion, Region, SwipeAction, VarAction, WaitAction,
+    ScreenshotAction
 )
 
 
@@ -187,6 +188,13 @@ class ActionFactory:
             return LoopEndAction(
                 **common_kwargs,
                 linked_loop_id=data.get("linked_loop_id", "")
+            )
+            
+        elif type == "screenshot":
+            return ScreenshotAction(
+                **common_kwargs,
+                filename_pattern=data.get("filename_pattern", "screenshot_{timestamp}.png"),
+                save_path=data.get("save_path", "screenshots")
             )
             
         return None

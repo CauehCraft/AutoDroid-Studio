@@ -3,8 +3,10 @@ import time
 
 import cv2
 
+import os
+from datetime import datetime
 from .action_executor import ActionExecutor
-from ..models import ClickAction, WaitAction, SwipeAction, Point, Region, PolygonRegion, MultiRegion, Size
+from ..models import ClickAction, WaitAction, SwipeAction, ScreenshotAction, Point, Region, PolygonRegion, MultiRegion, Size
 from ...utils.logger import app_logger
 
 class ClickExecutor(ActionExecutor):
@@ -149,3 +151,46 @@ class SwipeExecutor(ActionExecutor):
         
         runner.adb.execute_multitouch_actions(device, [temp_action])
         return True, None
+
+class ScreenshotExecutor(ActionExecutor):
+    def execute(self, runner, action: ScreenshotAction, device_serial: str) -> Tuple[bool, Optional[int]]:
+        device = runner.adb.connect_device(device_serial)
+        if not device:
+            return False, None
+
+        app_logger.info(f"Taking screenshot with pattern: {action.filename_pattern}")
+        
+        # Take screenshot
+        img = runner.adb.take_screenshot(device)
+        if img is None:
+            app_logger.error("Failed to capture screenshot")
+            return False, None
+            
+        # Prepare directory
+        save_path = action.save_path
+        if not os.path.isabs(save_path):
+            # If relative, save relative to current working dir or project root
+            save_path = os.path.join(os.getcwd(), save_path)
+            
+        if not os.path.exists(save_path):
+            try:
+                os.makedirs(save_path)
+            except Exception as e:
+                app_logger.error(f"Failed to create directory {save_path}: {e}")
+                return False, None
+
+        # Format filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = action.filename_pattern.replace("{timestamp}", timestamp)
+        if not filename.endswith(".png"):
+            filename += ".png"
+            
+        full_path = os.path.join(save_path, filename)
+        
+        try:
+            cv2.imwrite(full_path, img)
+            app_logger.info(f"Screenshot saved to: {full_path}")
+            return True, None
+        except Exception as e:
+            app_logger.error(f"Failed to save screenshot: {e}")
+            return False, None

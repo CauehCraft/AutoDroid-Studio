@@ -7,7 +7,6 @@ from qfluentwidgets import FluentIcon as FIF
 from .dashboard import Dashboard
 from .editor import MacroEditor
 from .inspector import ScreenInspector
-# from .macro_selection import MacroSelection
 from .region_manager import RegionManager
 
 class MainWindow(FluentWindow):
@@ -17,14 +16,12 @@ class MainWindow(FluentWindow):
 
         # Create sub-interfaces
         self.dashboard = Dashboard(self)
-        # self.macro_selection = MacroSelection(self) # Removed
         self.editor = MacroEditor(self)
         self.inspector = ScreenInspector(self)
         self.region_manager = RegionManager(self)
 
         # Add sub-interfaces to navigation
         self.addSubInterface(self.dashboard, FIF.HOME, 'Dashboard')
-        # self.addSubInterface(self.macro_selection, FIF.FOLDER, 'Macros') # Removed
         self.addSubInterface(self.editor, FIF.EDIT, 'Macro Editor')
         self.addSubInterface(self.inspector, FIF.CAMERA, 'Screen Inspector')
         self.addSubInterface(self.region_manager, FIF.TILES, 'Region Manager')

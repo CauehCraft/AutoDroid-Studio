@@ -10,12 +10,12 @@ from .comparison_utils import evaluate_condition as _evaluate_condition
 from .executors import (
     ClickExecutor, ClickImageExecutor, ConditionExecutor, LoopEndExecutor,
     LoopExecutor, LoopStartExecutor, MultiExecutor, OCRExecutor, SwipeExecutor,
-    VarExecutor, WaitExecutor
+    VarExecutor, WaitExecutor, ScreenshotExecutor
 )
 from .models import (
     Action, ClickAction, ClickImageAction, ConditionAction, LoopAction,
     LoopEndAction, LoopStartAction, Macro, MultiAction, MultiRegion, OCRAction,
-    Point, PolygonRegion, Region, SwipeAction, VarAction, WaitAction
+    Point, PolygonRegion, Region, SwipeAction, VarAction, WaitAction, ScreenshotAction
 )
 from .vision import VisionEngine
 from ..utils.logger import app_logger
@@ -48,7 +48,8 @@ class MacroRunner(threading.Thread):
             "loop_end": LoopEndExecutor(),
             "click_image": ClickImageExecutor(),
             "ocr": OCRExecutor(),
-            "multi": MultiExecutor()
+            "multi": MultiExecutor(),
+            "screenshot": ScreenshotExecutor()
         }
 
     def run(self):

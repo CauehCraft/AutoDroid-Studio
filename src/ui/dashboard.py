@@ -79,11 +79,12 @@ class DashboardRunner(QObject):
         self.variable_changed.emit(self.serial, name, value)
 
 class MacroItemWidget(QWidget):
-    def __init__(self, text, on_edit, on_delete, parent=None):
+    def __init__(self, text, on_edit, on_delete, on_duplicate, parent=None):
         super().__init__(parent)
         self.text = text
         self.on_edit = on_edit
         self.on_delete = on_delete
+        self.on_duplicate = on_duplicate
         self.setupUI()
         
     def setupUI(self):
@@ -114,7 +115,14 @@ class MacroItemWidget(QWidget):
         self.deleteBtn.clicked.connect(self.on_delete)
         self.deleteBtn.setCursor(Qt.CursorShape.PointingHandCursor)
         
+        # Duplicate Button
+        self.duplicateBtn = TransparentToolButton(FIF.COPY, self.btnContainer)
+        self.duplicateBtn.setToolTip("Duplicate Macro")
+        self.duplicateBtn.clicked.connect(self.on_duplicate)
+        self.duplicateBtn.setCursor(Qt.CursorShape.PointingHandCursor)
+        
         btnLayout.addWidget(self.editBtn)
+        btnLayout.addWidget(self.duplicateBtn)
         btnLayout.addWidget(self.deleteBtn)
         
         layout.addWidget(self.btnContainer)
@@ -343,7 +351,8 @@ class Dashboard(QWidget):
         widget = MacroItemWidget(
             text=filename,
             on_edit=lambda: self.edit_macro(filename),
-            on_delete=lambda: self.delete_macro(filename)
+            on_delete=lambda: self.delete_macro(filename),
+            on_duplicate=lambda: self.duplicate_macro(filename)
         )
         
         self.macroList.addItem(item)
@@ -409,6 +418,53 @@ class Dashboard(QWidget):
             except Exception as e:
                 err = MessageDialog("Error", f"Failed to delete macro: {e}", self)
                 err.exec()
+    
+    def duplicate_macro(self, filename):
+        path = os.path.join(self.macros_dir, filename)
+        
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+                
+            original_name = data.get("name", "Unknown")
+            
+            class InputDialog(MessageBoxBase):
+                def __init__(self, parent=None):
+                    super().__init__(parent)
+                    self.titleLabel = SubtitleLabel("Duplicate Macro", self)
+                    self.inputField = LineEdit(self)
+                    self.inputField.setPlaceholderText(f"Copy of {original_name}")
+                    self.inputField.setClearButtonEnabled(True)
+                    
+                    self.viewLayout.addWidget(self.titleLabel)
+                    self.viewLayout.addWidget(self.inputField)
+                    
+                    self.widget.setMinimumWidth(350)
+            
+            w = InputDialog(self)
+            if w.exec():
+                new_name = w.inputField.text().strip()
+                if new_name:
+                    new_filename = f"{new_name.replace(' ', '_')}.json"
+                    new_path = os.path.join(self.macros_dir, new_filename)
+                    
+                    if os.path.exists(new_path):
+                        err = MessageDialog("Error", "Macro with this name already exists!", self)
+                        err.exec()
+                        return
+                    
+                    # Update name and reset created_at
+                    data["name"] = new_name
+                    import time
+                    data["created_at"] = time.time()
+                    
+                    with open(new_path, 'w') as f:
+                        json.dump(data, f, indent=2)
+                        
+                    self.refresh_macros()
+        except Exception as e:
+             err = MessageDialog("Error", f"Failed to duplicate macro: {e}", self)
+             err.exec()
     
     def start_macro(self, serial, filename):
         if serial in self.runners:
